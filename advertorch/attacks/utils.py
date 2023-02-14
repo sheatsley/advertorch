@@ -58,13 +58,11 @@ def rand_init_delta(delta, x, ord, eps, clip_min, clip_max):
         delta.data.uniform_(-1, 1)
         delta.data = batch_multiply(eps, delta.data)
     elif ord == 2:
-        delta.data.uniform_(clip_min, clip_max)
+        delta.data.uniform_(clip_min.min(), clip_max.max())
         delta.data = delta.data - x
         delta.data = clamp_by_pnorm(delta.data, ord, eps)
     elif ord == 1:
-        ini = laplace.Laplace(
-            loc=delta.new_tensor(0), scale=delta.new_tensor(1)
-        )
+        ini = laplace.Laplace(loc=delta.new_tensor(0), scale=delta.new_tensor(1))
         delta.data = ini.sample(delta.data.shape)
         delta.data = normalize_by_pnorm(delta.data, p=1)
         ray = uniform.Uniform(0, eps).sample()
@@ -185,9 +183,7 @@ class MarginalLoss(_Loss):
 
 
 class ChooseBestAttack(Attack, LabelMixin):
-    def __init__(
-        self, predict, base_adversaries, loss_fn=None, targeted=False
-    ):
+    def __init__(self, predict, base_adversaries, loss_fn=None, targeted=False):
         self.predict = predict
         self.base_adversaries = base_adversaries
         self.loss_fn = loss_fn
